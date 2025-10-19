@@ -9,12 +9,7 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'styllus.app'],
     formats: ['image/avif', 'image/webp'],
-    unoptimized: true, // Updated code here
-  },
-
-  // Performance optimizations
-  experimental: {
-    optimizeCss: true,
+    unoptimized: true,
   },
 
   // Security headers
@@ -66,11 +61,11 @@ const nextConfig = {
   },
 
   eslint: {
-    ignoreDuringBuilds: true, // Updated code here
+    ignoreDuringBuilds: true,
   },
 
   typescript: {
-    ignoreBuildErrors: true, // Updated code here
+    ignoreBuildErrors: true,
   },
 }
 
