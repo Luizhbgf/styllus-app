@@ -1,14 +1,30 @@
 {
   "name": "styllus-app",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "next build",
+    "build:android": "npm run build:mobile && cd android && ./gradlew assembleRelease",
+    "build:ios": "npm run build:mobile && cd ios && xcodebuild -workspace App.xcworkspace -scheme App -configuration Release archive",
+    "build:mobile": "npm run build && npm run export && npx cap sync",
+    "build:web": "next build",
     "dev": "next dev",
+    "export": "next build && next export",
     "lint": "next lint",
-    "start": "next start"
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "start": "next start",
+    "sync": "npx cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@radix-ui/react-accordion": "^1.1.2",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "latest",
     "@radix-ui/react-checkbox": "latest",
     "@radix-ui/react-dialog": "latest",
@@ -24,7 +40,6 @@
     "@radix-ui/react-tabs": "latest",
     "@radix-ui/react-toast": "latest",
     "@supabase/supabase-js": "latest",
-    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "latest",
@@ -39,12 +54,11 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.4",
+    "eslint": "^8",
+    "eslint-config-next": "15.2.4",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

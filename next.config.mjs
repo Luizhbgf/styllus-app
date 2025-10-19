@@ -1,15 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: process.env.BUILD_MODE === 'mobile' ? 'export' : 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  trailingSlash: true,
   
   // PWA Configuration
   images: {
-    domains: ['localhost', 'styllus.app'],
+    domains: ['localhost', 'styllusestetica.com.br'],
     formats: ['image/avif', 'image/webp'],
-    unoptimized: true,
+    unoptimized: process.env.BUILD_MODE === 'mobile',
   },
 
   // Security headers
