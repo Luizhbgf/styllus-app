@@ -1,3 +1,9 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -6,107 +12,149 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { login, getRedirectPath } from "@/lib/auth/auth-service"
+import { setSession } from "@/lib/auth/session"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const { user, error } = await login({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error || !user) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao fazer login",
+          description: error || "Credenciais inválidas",
+        })
+        return
+      }
+
+      // Salvar sessão
+      setSession(user)
+
+      // Redirecionar baseado no nível de acesso
+      const redirectPath = getRedirectPath(user.accessLevel)
+
+      toast({
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo, ${user.name}`,
+      })
+
+      router.push(redirectPath)
+    } catch (error) {
+      console.error("Login error:", error)
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao fazer login. Tente novamente.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value, type, checked } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [id]: type === "checkbox" ? checked : value,
+    }))
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 flex items-center justify-center py-12">
+      <main className="flex-1 flex items-center justify-center py-12 px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Entrar</CardTitle>
+            <CardTitle className="text-2xl font-bold">Entrar no Styllus</CardTitle>
             <CardDescription>Entre com seu e-mail e senha para acessar sua conta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Tabs defaultValue="cliente" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="cliente">Cliente</TabsTrigger>
-                <TabsTrigger value="staff">Profissional</TabsTrigger>
-                <TabsTrigger value="admin">Administrador</TabsTrigger>
-              </TabsList>
-              <TabsContent value="cliente" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-cliente">E-mail</Label>
-                  <Input id="email-cliente" type="email" placeholder="seu@email.com" />
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link href="/recuperar-senha" className="text-sm text-primary hover:underline">
+                    Esqueceu a senha?
+                  </Link>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password-cliente">Senha</Label>
-                    <Link href="/recuperar-senha" className="text-sm text-primary hover:underline">
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
-                  <Input id="password-cliente" type="password" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember-cliente" />
-                  <Label htmlFor="remember-cliente" className="text-sm">
-                    Lembrar de mim
-                  </Label>
-                </div>
-                <Button className="w-full" asChild>
-                  <Link href="/cliente/dashboard">Entrar como Cliente</Link>
-                </Button>
-              </TabsContent>
-              <TabsContent value="staff" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-staff">E-mail</Label>
-                  <Input id="email-staff" type="email" placeholder="profissional@styllus.com" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password-staff">Senha</Label>
-                    <Link href="/recuperar-senha" className="text-sm text-primary hover:underline">
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
-                  <Input id="password-staff" type="password" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember-staff" />
-                  <Label htmlFor="remember-staff" className="text-sm">
-                    Lembrar de mim
-                  </Label>
-                </div>
-                <Button className="w-full" asChild>
-                  <Link href="/staff/dashboard">Entrar como Profissional</Link>
-                </Button>
-              </TabsContent>
-              <TabsContent value="admin" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-admin">E-mail</Label>
-                  <Input id="email-admin" type="email" placeholder="admin@styllus.com" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password-admin">Senha</Label>
-                    <Link href="/recuperar-senha" className="text-sm text-primary hover:underline">
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
-                  <Input id="password-admin" type="password" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember-admin" />
-                  <Label htmlFor="remember-admin" className="text-sm">
-                    Lembrar de mim
-                  </Label>
-                </div>
-                <Button className="w-full" asChild>
-                  <Link href="/admin/dashboard">Entrar como Administrador</Link>
-                </Button>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm">
-              Não tem uma conta?{" "}
-              <Link href="/cadastro" className="text-primary hover:underline">
-                Cadastre-se
-              </Link>
-            </div>
-          </CardFooter>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember"
+                  checked={formData.remember}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, remember: checked as boolean }))}
+                  disabled={isLoading}
+                />
+                <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                  Lembrar de mim
+                </Label>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </Button>
+              <div className="text-center text-sm">
+                Não tem uma conta?{" "}
+                <Link href="/cadastro" className="text-primary hover:underline font-medium">
+                  Cadastre-se
+                </Link>
+              </div>
+              <div className="pt-4 border-t">
+                <p className="text-xs text-muted-foreground text-center">
+                  Ao fazer login, você será redirecionado automaticamente para a área apropriada com base no seu nível
+                  de acesso.
+                </p>
+              </div>
+            </CardFooter>
+          </form>
         </Card>
       </main>
       <SiteFooter />
