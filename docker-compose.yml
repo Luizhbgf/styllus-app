@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Aplicação Next.js - Desenvolvimento
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ENV: development
+    container_name: styllus-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - styllus-network
+    restart: unless-stopped
+
+  # Aplicação Next.js - Homologação
+  app-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ENV: staging
+    container_name: styllus-staging
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${STAGING_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${STAGING_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${STAGING_SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - styllus-network
+    restart: unless-stopped
+
+  # Aplicação Next.js - Produção
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ENV: production
+    container_name: styllus-prod
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${PROD_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${PROD_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${PROD_SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - styllus-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: styllus-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app-prod
+    networks:
+      - styllus-network
+    restart: unless-stopped
+
+  # Redis para cache e sessions
+  redis:
+    image: redis:alpine
+    container_name: styllus-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - styllus-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+networks:
+  styllus-network:
+    driver: bridge
+
+volumes:
+  redis-data:

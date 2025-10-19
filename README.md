@@ -1,30 +1,113 @@
-# Fork of Styllus app
+# 💈 Styllus - Sistema de Gerenciamento de Salão
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Sistema completo para agendamento e gerenciamento de salões de beleza, barbearias e spas.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/luizhbgfs-projects/v0-fork-of-styllus-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/AlPF4KHJHK8)
+## ✨ Funcionalidades
 
-## Overview
+### Para Clientes
+- 📅 Agendamento online
+- 👨‍💼 Busca de profissionais
+- ⭐ Sistema de avaliações
+- 💳 Assinaturas mensais
+- 📱 App mobile (PWA)
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+### Para Profissionais (Staff)
+- 📊 Dashboard de desempenho
+- 💰 Controle financeiro
+- 📅 Gestão de agenda
+- 💎 Criação de planos de assinatura
+- 👥 Gestão de clientes
 
-## Deployment
+### Para Administradores
+- 🏢 Visão geral do negócio
+- 👥 Gestão de usuários e permissões
+- 📈 Relatórios e analytics
+- ⚙️ Configurações do sistema
+- 💰 Controle financeiro global
 
-Your project is live at:
+## 🚀 Tecnologias
 
-**[https://vercel.com/luizhbgfs-projects/v0-fork-of-styllus-app](https://vercel.com/luizhbgfs-projects/v0-fork-of-styllus-app)**
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: PostgreSQL (Supabase)
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Auth**: Sistema customizado com níveis
+- **Deploy**: Docker, Vercel, Nginx
 
-## Build your app
+## 📦 Instalação
 
-Continue building your app on:
+### Desenvolvimento Local
 
-**[https://v0.app/chat/projects/AlPF4KHJHK8](https://v0.app/chat/projects/AlPF4KHJHK8)**
+\`\`\`bash
+# Instalar dependências
+npm install
 
-## How It Works
+# Configurar ambiente
+cp .env.development.example .env.development
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+# Executar
+npm run dev
+\`\`\`
+
+### Com Docker
+
+\`\`\`bash
+# Desenvolvimento
+docker-compose up app-dev
+
+# Produção
+docker-compose up -d
+\`\`\`
+
+## 🌐 Ambientes
+
+- **Desenvolvimento**: http://localhost:3000
+- **Homologação**: http://localhost:3001
+- **Produção**: http://localhost (via Nginx)
+
+## 👤 Usuários de Teste
+
+Após executar os scripts SQL:
+
+- **Owner**: owner@styllus.com / senha123
+- **Admin**: admin@styllus.com / senha123
+- **Staff**: carlos@styllus.com / senha123
+- **Cliente**: maria@cliente.com / senha123
+
+## 📱 App Mobile
+
+A aplicação é uma PWA e pode ser instalada como app nativo:
+
+- **Android**: Chrome > Menu > "Adicionar à tela inicial"
+- **iOS**: Safari > Compartilhar > "Adicionar à Tela de Início"
+
+## 📊 Níveis de Acesso
+
+- **10 - Cliente**: Área do cliente
+- **20 - Staff**: Área de profissionais
+- **30 - Admin**: Área administrativa
+- **Owner**: Super administrador
+
+## 🔒 Segurança
+
+- Sistema de autenticação com níveis hierárquicos
+- Rate limiting
+- Headers de segurança
+- Validações frontend e backend
+- Logs de alterações
+
+## 📖 Documentação
+
+Veja [DEPLOYMENT.md](./DEPLOYMENT.md) para guia completo de deploy.
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
