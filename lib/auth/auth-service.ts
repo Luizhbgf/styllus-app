@@ -23,41 +23,41 @@ export interface AuthUser {
 
 export async function login(credentials: LoginCredentials): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    const { data: users, error: userError } = await supabase
+    // 1. Fazer login com Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    })
+
+    if (authError) {
+      console.error("Auth error:", authError)
+      return { user: null, error: "Email ou senha incorretos" }
+    }
+
+    if (!authData.user) {
+      return { user: null, error: "Email ou senha incorretos" }
+    }
+
+    // 2. Buscar dados do usuário na tabela users
+    const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*")
-      .eq("email", credentials.email)
-      .eq("is_active", true)
+      .eq("id", authData.user.id)
+      .single()
 
-    if (userError) {
-      console.error("Error fetching user:", userError)
-      return { user: null, error: "Erro ao buscar usuário" }
+    if (userError || !userData) {
+      console.error("User data error:", userError)
+      return { user: null, error: "Erro ao carregar dados do usuário" }
     }
-
-    if (!users || users.length === 0) {
-      return { user: null, error: "Email ou senha incorretos" }
-    }
-
-    const user = users[0]
-
-    // Por enquanto, aceitar qualquer senha não vazia
-    const isValidPassword = credentials.password.length > 0
-
-    if (!isValidPassword) {
-      return { user: null, error: "Email ou senha incorretos" }
-    }
-
-    // Atualizar último login usando o cliente (sem privilégios administrativos)
-    await supabase.from("users").update({ last_login: new Date().toISOString() }).eq("id", user.id)
 
     return {
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        accessLevel: user.access_level,
-        isOwner: user.is_owner,
-        userType: user.user_type,
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        accessLevel: userData.access_level || 10,
+        isOwner: userData.is_owner || false,
+        userType: userData.user_type || "client",
       },
       error: null,
     }
@@ -69,22 +69,37 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
 
 export async function register(data: RegisterData): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    // Verificar se email já existe
-    const { data: existingUsers, error: checkError } = await supabase.from("users").select("id").eq("email", data.email)
+    // 1. Criar usuário no Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name,
+          phone: data.phone,
+        },
+      },
+    })
 
-    if (checkError) {
-      console.error("Error checking existing user:", checkError)
-      return { user: null, error: "Erro ao verificar email" }
+    if (authError) {
+      console.error("Auth signup error:", authError)
+
+      if (authError.message.includes("already registered")) {
+        return { user: null, error: "Este email já está cadastrado" }
+      }
+
+      return { user: null, error: authError.message || "Erro ao criar conta" }
     }
 
-    if (existingUsers && existingUsers.length > 0) {
-      return { user: null, error: "Este email já está cadastrado" }
+    if (!authData.user) {
+      return { user: null, error: "Erro ao criar conta. Tente novamente." }
     }
 
-    // Criar novo usuário
-    const { data: newUser, error: insertError } = await supabase
+    // 2. Criar registro na tabela users
+    const { data: userData, error: userError } = await supabase
       .from("users")
       .insert({
+        id: authData.user.id,
         email: data.email,
         name: data.name,
         phone: data.phone,
@@ -97,36 +112,88 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
       .select()
       .single()
 
-    if (insertError || !newUser) {
-      console.error("Error creating user:", insertError)
-      return { user: null, error: "Erro ao criar conta. Tente novamente." }
+    if (userError) {
+      console.error("User insert error:", userError)
+      // Mesmo com erro no insert, o usuário foi criado no Auth
+      // Vamos retornar os dados do Auth
+      return {
+        user: {
+          id: authData.user.id,
+          email: data.email,
+          name: data.name,
+          accessLevel: 10,
+          isOwner: false,
+          userType: "client",
+        },
+        error: null,
+      }
     }
 
-    // Criar registro de cliente
-    const { error: clientError } = await supabase.from("clients").insert({
-      user_id: newUser.id,
+    // 3. Criar registro de cliente
+    await supabase.from("clients").insert({
+      user_id: authData.user.id,
       status: "active",
       created_at: new Date().toISOString(),
     })
 
-    if (clientError) {
-      console.error("Error creating client record:", clientError)
-    }
-
     return {
       user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        accessLevel: newUser.access_level,
-        isOwner: newUser.is_owner,
-        userType: newUser.user_type,
+        id: authData.user.id,
+        email: data.email,
+        name: data.name,
+        accessLevel: 10,
+        isOwner: false,
+        userType: "client",
       },
       error: null,
     }
   } catch (error) {
     console.error("Register error:", error)
     return { user: null, error: "Erro ao criar conta. Tente novamente." }
+  }
+}
+
+export async function logout(): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error("Logout error:", error)
+      return { error: "Erro ao fazer logout" }
+    }
+    return { error: null }
+  } catch (error) {
+    console.error("Logout error:", error)
+    return { error: "Erro ao fazer logout" }
+  }
+}
+
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+
+    if (!authUser) {
+      return null
+    }
+
+    const { data: userData } = await supabase.from("users").select("*").eq("id", authUser.id).single()
+
+    if (!userData) {
+      return null
+    }
+
+    return {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      accessLevel: userData.access_level || 10,
+      isOwner: userData.is_owner || false,
+      userType: userData.user_type || "client",
+    }
+  } catch (error) {
+    console.error("Get current user error:", error)
+    return null
   }
 }
 

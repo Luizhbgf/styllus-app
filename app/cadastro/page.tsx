@@ -14,12 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { register } from "@/lib/auth/auth-service"
 import { setSession } from "@/lib/auth/session"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserPlus } from "lucide-react"
+import { Loader2, UserPlus, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function CadastroPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -32,54 +34,43 @@ export default function CadastroPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "As senhas não coincidem",
-      })
+      setError("As senhas não coincidem")
       return
     }
 
     if (!formData.terms) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Você precisa aceitar os termos de serviço",
-      })
+      setError("Você precisa aceitar os termos de serviço")
       return
     }
 
     if (formData.password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "A senha deve ter pelo menos 6 caracteres",
-      })
+      setError("A senha deve ter pelo menos 6 caracteres")
       return
     }
 
     setIsLoading(true)
 
     try {
-      const { user, error } = await register({
+      console.log("Attempting registration for:", formData.email)
+
+      const { user, error: registerError } = await register({
         email: formData.email,
         password: formData.password,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         phone: formData.phone,
       })
 
-      if (error || !user) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar conta",
-          description: error || "Não foi possível criar sua conta",
-        })
+      if (registerError || !user) {
+        console.error("Registration failed:", registerError)
+        setError(registerError || "Não foi possível criar sua conta")
         setIsLoading(false)
         return
       }
 
+      console.log("Registration successful:", user)
       setSession(user)
 
       toast({
@@ -90,14 +81,10 @@ export default function CadastroPage() {
       setTimeout(() => {
         router.push("/cliente/dashboard")
         router.refresh()
-      }, 1000)
+      }, 500)
     } catch (error) {
-      console.error("Register error:", error)
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
-      })
+      console.error("Registration exception:", error)
+      setError("Ocorreu um erro inesperado. Tente novamente.")
       setIsLoading(false)
     }
   }
@@ -108,6 +95,7 @@ export default function CadastroPage() {
       ...prev,
       [id]: value,
     }))
+    setError(null)
   }
 
   return (
@@ -124,6 +112,13 @@ export default function CadastroPage() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Nome</Label>
@@ -150,6 +145,7 @@ export default function CadastroPage() {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
@@ -163,6 +159,7 @@ export default function CadastroPage() {
                   autoComplete="email"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
                 <Input
@@ -176,6 +173,7 @@ export default function CadastroPage() {
                   autoComplete="tel"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -190,6 +188,7 @@ export default function CadastroPage() {
                   autoComplete="new-password"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                 <Input
@@ -204,6 +203,7 @@ export default function CadastroPage() {
                   autoComplete="new-password"
                 />
               </div>
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="terms"
@@ -223,6 +223,7 @@ export default function CadastroPage() {
                 </Label>
               </div>
             </CardContent>
+
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading} size="lg">
                 {isLoading ? (
@@ -234,6 +235,7 @@ export default function CadastroPage() {
                   "Criar Conta"
                 )}
               </Button>
+
               <div className="text-center text-sm">
                 Já tem uma conta?{" "}
                 <Link href="/login" className="text-primary hover:underline font-medium">

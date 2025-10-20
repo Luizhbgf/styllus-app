@@ -14,12 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { login, getRedirectPath } from "@/lib/auth/auth-service"
 import { setSession } from "@/lib/auth/session"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Lock, Mail } from "lucide-react"
+import { Loader2, Lock, Mail, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,23 +31,24 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     try {
-      const { user, error } = await login({
+      console.log("Attempting login with:", formData.email)
+
+      const { user, error: loginError } = await login({
         email: formData.email,
         password: formData.password,
       })
 
-      if (error || !user) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: error || "Credenciais inválidas",
-        })
+      if (loginError || !user) {
+        console.error("Login failed:", loginError)
+        setError(loginError || "Credenciais inválidas")
         setIsLoading(false)
         return
       }
 
+      console.log("Login successful:", user)
       setSession(user)
       const redirectPath = getRedirectPath(user.accessLevel)
 
@@ -54,18 +57,13 @@ export default function LoginPage() {
         description: `Bem-vindo, ${user.name}`,
       })
 
-      // Aguardar um pouco antes de redirecionar
       setTimeout(() => {
         router.push(redirectPath)
         router.refresh()
-      }, 1000)
+      }, 500)
     } catch (error) {
-      console.error("Login error:", error)
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro ao fazer login. Tente novamente.",
-      })
+      console.error("Login exception:", error)
+      setError("Ocorreu um erro inesperado. Tente novamente.")
       setIsLoading(false)
     }
   }
@@ -76,6 +74,7 @@ export default function LoginPage() {
       ...prev,
       [id]: type === "checkbox" ? checked : value,
     }))
+    setError(null)
   }
 
   return (
@@ -92,6 +91,13 @@ export default function LoginPage() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
@@ -109,6 +115,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
@@ -131,6 +138,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="remember"
@@ -143,6 +151,7 @@ export default function LoginPage() {
                 </Label>
               </div>
             </CardContent>
+
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading} size="lg">
                 {isLoading ? (
@@ -154,15 +163,17 @@ export default function LoginPage() {
                   "Entrar"
                 )}
               </Button>
+
               <div className="text-center text-sm">
                 Não tem uma conta?{" "}
                 <Link href="/cadastro" className="text-primary hover:underline font-medium">
                   Cadastre-se gratuitamente
                 </Link>
               </div>
+
               <div className="pt-4 border-t">
                 <p className="text-xs text-muted-foreground text-center">
-                  Para testes, use qualquer senha. Em produção, será implementada autenticação segura.
+                  Use suas credenciais para fazer login no sistema.
                 </p>
               </div>
             </CardFooter>
