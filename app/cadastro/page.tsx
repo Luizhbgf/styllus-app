@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { authService } from "@/lib/auth/auth-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { authService } from "@/lib/auth/auth-service"
+import { saveSession } from "@/lib/auth/session"
+import { Loader2 } from "lucide-react"
 
 export default function CadastroPage() {
   const router = useRouter()
@@ -25,90 +26,70 @@ export default function CadastroPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Validações
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem")
       return
     }
 
     if (formData.password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres")
+      setError("A senha deve ter no mínimo 6 caracteres")
       return
     }
 
     setLoading(true)
 
     try {
-      console.log("Tentando cadastrar usuário...")
-      const { user, error: registerError } = await authService.register({
+      const { user, error } = await authService.register({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
       })
 
-      if (registerError) {
-        console.error("Erro no cadastro:", registerError)
-        setError(registerError)
+      if (error) {
+        setError(error)
         setLoading(false)
         return
       }
 
-      if (!user) {
-        setError("Falha ao criar conta")
-        setLoading(false)
-        return
+      if (user) {
+        saveSession(user)
+        router.push("/cliente/dashboard")
       }
-
-      console.log("Cadastro bem-sucedido! Usuário:", user)
-
-      // Redirecionar para dashboard do cliente
-      router.push("/cliente/dashboard")
     } catch (err: any) {
-      console.error("Erro inesperado no cadastro:", err)
       setError(err.message || "Erro ao criar conta")
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Criar conta</CardTitle>
-          <CardDescription className="text-center">Preencha os dados abaixo para criar sua conta</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
+          <CardDescription className="text-center">Preencha os dados para se cadastrar</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="name">Nome completo</Label>
+              <Label htmlFor="name">Nome Completo</Label>
               <Input
                 id="name"
-                name="name"
                 type="text"
                 placeholder="Seu nome"
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                autoComplete="name"
                 disabled={loading}
               />
             </div>
@@ -117,27 +98,23 @@ export default function CadastroPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                autoComplete="email"
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone (opcional)</Label>
+              <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
-                name="phone"
                 type="tel"
-                placeholder="(11) 99999-9999"
+                placeholder="(00) 00000-0000"
                 value={formData.phone}
-                onChange={handleChange}
-                autoComplete="tel"
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 disabled={loading}
               />
             </div>
@@ -146,28 +123,24 @@ export default function CadastroPage() {
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Mínimo 6 caracteres"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                autoComplete="new-password"
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
               <Input
                 id="confirmPassword"
-                name="confirmPassword"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Digite a senha novamente"
                 value={formData.confirmPassword}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
-                autoComplete="new-password"
                 disabled={loading}
               />
             </div>
@@ -176,16 +149,16 @@ export default function CadastroPage() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
+                  Cadastrando...
                 </>
               ) : (
-                "Criar conta"
+                "Cadastrar"
               )}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-sm text-muted-foreground">
               Já tem uma conta?{" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link href="/login" className="text-primary hover:underline">
                 Faça login
               </Link>
             </div>

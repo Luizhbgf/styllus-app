@@ -5,7 +5,10 @@ export interface User {
   email: string
   name: string
   phone?: string
-  access_level: "client" | "staff" | "admin" | "owner"
+  access_level: number
+  is_owner: boolean
+  user_type: "client" | "professional" | "admin"
+  is_active: boolean
   created_at: string
 }
 
@@ -26,7 +29,6 @@ export const authService = {
     try {
       console.log("Iniciando registro:", data.email)
 
-      // 1. Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -49,10 +51,8 @@ export const authService = {
 
       console.log("Usuário criado no Auth:", authData.user.id)
 
-      // 2. Aguardar um pouco para o trigger criar o registro na tabela users
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // 3. Buscar dados completos do usuário
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -61,14 +61,16 @@ export const authService = {
 
       if (userError) {
         console.error("Erro ao buscar dados do usuário:", userError)
-        // Mesmo com erro, retornar dados básicos
         return {
           user: {
             id: authData.user.id,
             email: authData.user.email!,
             name: data.name,
             phone: data.phone,
-            access_level: "client",
+            access_level: 10,
+            is_owner: false,
+            user_type: "client",
+            is_active: true,
             created_at: new Date().toISOString(),
           },
           error: null,
@@ -87,7 +89,6 @@ export const authService = {
     try {
       console.log("Iniciando login:", credentials.email)
 
-      // 1. Fazer login no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -104,7 +105,6 @@ export const authService = {
 
       console.log("Login no Auth bem-sucedido:", authData.user.id)
 
-      // 2. Buscar dados completos do usuário
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -113,14 +113,16 @@ export const authService = {
 
       if (userError) {
         console.error("Erro ao buscar dados do usuário:", userError)
-        // Retornar dados básicos do Auth
         return {
           user: {
             id: authData.user.id,
             email: authData.user.email!,
             name: authData.user.user_metadata?.name || authData.user.email!.split("@")[0],
             phone: authData.user.user_metadata?.phone,
-            access_level: "client",
+            access_level: 10,
+            is_owner: false,
+            user_type: "client",
+            is_active: true,
             created_at: authData.user.created_at,
           },
           error: null,
@@ -172,4 +174,25 @@ export const authService = {
       return null
     }
   },
+}
+
+export function canModifyUser(currentUserLevel: number, currentUserIsOwner: boolean, targetUserLevel: number): boolean {
+  if (currentUserIsOwner) return true
+  if (targetUserLevel >= currentUserLevel) return false
+  return true
+}
+
+export function getAccessLevelName(level: number): string {
+  const levels: Record<number, string> = {
+    10: "Cliente",
+    20: "Staff",
+    30: "Admin",
+  }
+  return levels[level] || "Desconhecido"
+}
+
+export function getRedirectPath(accessLevel: number): string {
+  if (accessLevel >= 30) return "/admin/dashboard"
+  if (accessLevel >= 20) return "/staff/dashboard"
+  return "/cliente/dashboard"
 }
