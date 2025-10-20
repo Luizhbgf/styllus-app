@@ -42,6 +42,7 @@ export default function LoginPage() {
           title: "Erro ao fazer login",
           description: error || "Credenciais inválidas",
         })
+        setIsLoading(false)
         return
       }
 
@@ -53,9 +54,11 @@ export default function LoginPage() {
         description: `Bem-vindo, ${user.name}`,
       })
 
+      // Aguardar um pouco antes de redirecionar
       setTimeout(() => {
         router.push(redirectPath)
-      }, 500)
+        router.refresh()
+      }, 1000)
     } catch (error) {
       console.error("Login error:", error)
       toast({
@@ -63,7 +66,6 @@ export default function LoginPage() {
         title: "Erro",
         description: "Ocorreu um erro ao fazer login. Tente novamente.",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -103,6 +105,7 @@ export default function LoginPage() {
                     onChange={handleChange}
                     required
                     disabled={isLoading}
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -124,6 +127,7 @@ export default function LoginPage() {
                     onChange={handleChange}
                     required
                     disabled={isLoading}
+                    autoComplete="current-password"
                   />
                 </div>
               </div>
@@ -158,7 +162,7 @@ export default function LoginPage() {
               </div>
               <div className="pt-4 border-t">
                 <p className="text-xs text-muted-foreground text-center">
-                  Ao fazer login, você será redirecionado automaticamente para a área apropriada.
+                  Para testes, use qualquer senha. Em produção, será implementada autenticação segura.
                 </p>
               </div>
             </CardFooter>

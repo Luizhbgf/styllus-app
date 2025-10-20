@@ -76,6 +76,7 @@ export default function CadastroPage() {
           title: "Erro ao criar conta",
           description: error || "Não foi possível criar sua conta",
         })
+        setIsLoading(false)
         return
       }
 
@@ -88,7 +89,8 @@ export default function CadastroPage() {
 
       setTimeout(() => {
         router.push("/cliente/dashboard")
-      }, 500)
+        router.refresh()
+      }, 1000)
     } catch (error) {
       console.error("Register error:", error)
       toast({
@@ -96,7 +98,6 @@ export default function CadastroPage() {
         title: "Erro",
         description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -133,6 +134,7 @@ export default function CadastroPage() {
                     onChange={handleChange}
                     required
                     disabled={isLoading}
+                    autoComplete="given-name"
                   />
                 </div>
                 <div className="space-y-2">
@@ -144,6 +146,7 @@ export default function CadastroPage() {
                     onChange={handleChange}
                     required
                     disabled={isLoading}
+                    autoComplete="family-name"
                   />
                 </div>
               </div>
@@ -157,6 +160,7 @@ export default function CadastroPage() {
                   onChange={handleChange}
                   required
                   disabled={isLoading}
+                  autoComplete="email"
                 />
               </div>
               <div className="space-y-2">
@@ -169,6 +173,7 @@ export default function CadastroPage() {
                   onChange={handleChange}
                   required
                   disabled={isLoading}
+                  autoComplete="tel"
                 />
               </div>
               <div className="space-y-2">
@@ -182,6 +187,7 @@ export default function CadastroPage() {
                   required
                   disabled={isLoading}
                   minLength={6}
+                  autoComplete="new-password"
                 />
               </div>
               <div className="space-y-2">
@@ -195,6 +201,7 @@ export default function CadastroPage() {
                   required
                   disabled={isLoading}
                   minLength={6}
+                  autoComplete="new-password"
                 />
               </div>
               <div className="flex items-center space-x-2">

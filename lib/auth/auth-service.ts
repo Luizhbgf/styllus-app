@@ -1,4 +1,3 @@
-import { supabaseAdmin } from "@/lib/supabase/server"
 import { supabase } from "@/lib/supabase/client"
 
 export interface LoginCredentials {
@@ -41,16 +40,15 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
 
     const user = users[0]
 
-    // Por enquanto, aceitar qualquer senha para desenvolvimento
-    // TODO: Implementar verificação de senha com bcrypt
-    const isValidPassword = credentials.password === "123456" || credentials.password.length > 0
+    // Por enquanto, aceitar qualquer senha não vazia
+    const isValidPassword = credentials.password.length > 0
 
     if (!isValidPassword) {
       return { user: null, error: "Email ou senha incorretos" }
     }
 
-    // Atualizar último login
-    await supabaseAdmin.from("users").update({ last_login: new Date().toISOString() }).eq("id", user.id)
+    // Atualizar último login usando o cliente (sem privilégios administrativos)
+    await supabase.from("users").update({ last_login: new Date().toISOString() }).eq("id", user.id)
 
     return {
       user: {
@@ -94,6 +92,7 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
         access_level: 10,
         is_owner: false,
         is_active: true,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single()
@@ -107,6 +106,7 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
     const { error: clientError } = await supabase.from("clients").insert({
       user_id: newUser.id,
       status: "active",
+      created_at: new Date().toISOString(),
     })
 
     if (clientError) {
