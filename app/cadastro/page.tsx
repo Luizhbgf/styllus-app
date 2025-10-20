@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -12,10 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { authService } from "@/lib/auth/auth-service"
 import { saveSession } from "@/lib/auth/session"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 export default function CadastroPage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +26,10 @@ export default function CadastroPage() {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,27 +48,34 @@ export default function CadastroPage() {
     setLoading(true)
 
     try {
-      const { user, error } = await authService.register({
+      const { user, error: registerError } = await authService.register({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
       })
 
-      if (error) {
-        setError(error)
+      if (registerError || !user) {
+        setError(registerError || "Erro ao criar conta")
         setLoading(false)
         return
       }
 
-      if (user) {
-        saveSession(user)
-        router.push("/cliente/dashboard")
-      }
+      saveSession(user)
+      router.push("/cliente/dashboard")
+      router.refresh()
     } catch (err: any) {
       setError(err.message || "Erro ao criar conta")
       setLoading(false)
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -77,6 +89,7 @@ export default function CadastroPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -91,6 +104,7 @@ export default function CadastroPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 disabled={loading}
+                autoComplete="name"
               />
             </div>
 
@@ -104,6 +118,7 @@ export default function CadastroPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
 
@@ -116,6 +131,7 @@ export default function CadastroPage() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 disabled={loading}
+                autoComplete="tel"
               />
             </div>
 
@@ -129,6 +145,8 @@ export default function CadastroPage() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 disabled={loading}
+                autoComplete="new-password"
+                minLength={6}
               />
             </div>
 
@@ -142,6 +160,8 @@ export default function CadastroPage() {
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
                 disabled={loading}
+                autoComplete="new-password"
+                minLength={6}
               />
             </div>
 
@@ -152,13 +172,13 @@ export default function CadastroPage() {
                   Cadastrando...
                 </>
               ) : (
-                "Cadastrar"
+                "Criar Conta"
               )}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
               Já tem uma conta?{" "}
-              <Link href="/login" className="text-primary hover:underline">
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Faça login
               </Link>
             </div>

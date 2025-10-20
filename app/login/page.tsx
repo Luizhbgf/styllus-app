@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "link"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,14 +12,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { authService, getRedirectPath } from "@/lib/auth/auth-service"
 import { saveSession } from "@/lib/auth/session"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,23 +32,30 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { user, error } = await authService.login({ email, password })
+      const { user, error: loginError } = await authService.login({ email, password })
 
-      if (error) {
-        setError(error)
+      if (loginError || !user) {
+        setError(loginError || "Erro ao fazer login")
         setLoading(false)
         return
       }
 
-      if (user) {
-        saveSession(user)
-        const redirectPath = getRedirectPath(user.access_level)
-        router.push(redirectPath)
-      }
+      saveSession(user)
+      const redirectPath = getRedirectPath(user.access_level)
+      router.push(redirectPath)
+      router.refresh()
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login")
       setLoading(false)
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -57,6 +69,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -71,6 +84,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
 
@@ -84,6 +98,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
 
@@ -100,7 +115,7 @@ export default function LoginPage() {
 
             <div className="text-center text-sm text-muted-foreground">
               Não tem uma conta?{" "}
-              <Link href="/cadastro" className="text-primary hover:underline">
+              <Link href="/cadastro" className="text-primary hover:underline font-medium">
                 Cadastre-se
               </Link>
             </div>

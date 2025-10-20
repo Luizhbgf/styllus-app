@@ -4,7 +4,11 @@ const SESSION_KEY = "styllus_user_session"
 
 export function saveSession(user: User): void {
   if (typeof window !== "undefined") {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user))
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(user))
+    } catch (error) {
+      console.error("Erro ao salvar sessão:", error)
+    }
   }
 }
 
@@ -25,7 +29,11 @@ export function getSession(): User | null {
 
 export function clearSession(): void {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(SESSION_KEY)
+    try {
+      localStorage.removeItem(SESSION_KEY)
+    } catch (error) {
+      console.error("Erro ao limpar sessão:", error)
+    }
   }
 }
 
@@ -33,35 +41,26 @@ export function isAuthenticated(): boolean {
   return getSession() !== null
 }
 
-export function requireAuth(): User {
+export function requireAuth(): User | null {
   const user = getSession()
-  if (!user) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/login"
-    }
-    throw new Error("Não autenticado")
+  if (!user && typeof window !== "undefined") {
+    window.location.href = "/login"
   }
   return user
 }
 
-export function requireAdmin(): User {
+export function requireAdmin(): User | null {
   const user = requireAuth()
-  if (user.access_level < 30) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/cliente/dashboard"
-    }
-    throw new Error("Acesso negado")
+  if (user && user.access_level < 30 && typeof window !== "undefined") {
+    window.location.href = "/cliente/dashboard"
   }
   return user
 }
 
-export function requireStaff(): User {
+export function requireStaff(): User | null {
   const user = requireAuth()
-  if (user.access_level < 20) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/cliente/dashboard"
-    }
-    throw new Error("Acesso negado")
+  if (user && user.access_level < 20 && typeof window !== "undefined") {
+    window.location.href = "/cliente/dashboard"
   }
   return user
 }

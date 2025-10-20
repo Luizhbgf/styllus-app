@@ -27,8 +27,9 @@ export interface RegisterData {
 export const authService = {
   async register(data: RegisterData): Promise<{ user: User | null; error: string | null }> {
     try {
-      console.log("Iniciando registro:", data.email)
+      console.log("📝 Iniciando registro para:", data.email)
 
+      // 1. Criar conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -41,18 +42,20 @@ export const authService = {
       })
 
       if (authError) {
-        console.error("Erro ao criar autenticação:", authError)
+        console.error("❌ Erro no registro:", authError)
         return { user: null, error: authError.message }
       }
 
       if (!authData.user) {
-        return { user: null, error: "Falha ao criar usuário" }
+        return { user: null, error: "Falha ao criar conta" }
       }
 
-      console.log("Usuário criado no Auth:", authData.user.id)
+      console.log("✅ Conta criada no Auth:", authData.user.id)
 
+      // 2. Aguardar trigger criar o usuário na tabela
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
+      // 3. Buscar dados completos do usuário
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -60,7 +63,7 @@ export const authService = {
         .single()
 
       if (userError) {
-        console.error("Erro ao buscar dados do usuário:", userError)
+        console.warn("⚠️ Erro ao buscar usuário, usando dados básicos")
         return {
           user: {
             id: authData.user.id,
@@ -77,25 +80,26 @@ export const authService = {
         }
       }
 
-      console.log("Registro completo com sucesso")
+      console.log("✅ Registro completo!")
       return { user: userData as User, error: null }
     } catch (error: any) {
-      console.error("Erro no registro:", error)
-      return { user: null, error: error.message || "Erro ao cadastrar usuário" }
+      console.error("❌ Exceção no registro:", error)
+      return { user: null, error: error.message || "Erro ao criar conta" }
     }
   },
 
   async login(credentials: LoginCredentials): Promise<{ user: User | null; error: string | null }> {
     try {
-      console.log("Iniciando login:", credentials.email)
+      console.log("🔐 Iniciando login para:", credentials.email)
 
+      // 1. Fazer login no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       })
 
       if (authError) {
-        console.error("Erro ao fazer login:", authError)
+        console.error("❌ Erro no login:", authError)
         return { user: null, error: "Email ou senha incorretos" }
       }
 
@@ -103,8 +107,9 @@ export const authService = {
         return { user: null, error: "Falha ao fazer login" }
       }
 
-      console.log("Login no Auth bem-sucedido:", authData.user.id)
+      console.log("✅ Login no Auth bem-sucedido")
 
+      // 2. Buscar dados do usuário na tabela
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -112,7 +117,7 @@ export const authService = {
         .single()
 
       if (userError) {
-        console.error("Erro ao buscar dados do usuário:", userError)
+        console.warn("⚠️ Erro ao buscar usuário, usando dados básicos")
         return {
           user: {
             id: authData.user.id,
@@ -129,10 +134,10 @@ export const authService = {
         }
       }
 
-      console.log("Login completo com sucesso")
+      console.log("✅ Login completo!")
       return { user: userData as User, error: null }
     } catch (error: any) {
-      console.error("Erro no login:", error)
+      console.error("❌ Exceção no login:", error)
       return { user: null, error: error.message || "Erro ao fazer login" }
     }
   },
@@ -140,13 +145,8 @@ export const authService = {
   async logout(): Promise<{ error: string | null }> {
     try {
       const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error("Erro ao fazer logout:", error)
-        return { error: error.message }
-      }
-      return { error: null }
+      return { error: error ? error.message : null }
     } catch (error: any) {
-      console.error("Erro no logout:", error)
       return { error: error.message || "Erro ao fazer logout" }
     }
   },
@@ -157,20 +157,14 @@ export const authService = {
         data: { user: authUser },
       } = await supabase.auth.getUser()
 
-      if (!authUser) {
-        return null
-      }
+      if (!authUser) return null
 
       const { data: userData, error } = await supabase.from("users").select("*").eq("id", authUser.id).single()
 
-      if (error) {
-        console.error("Erro ao buscar usuário atual:", error)
-        return null
-      }
+      if (error) return null
 
       return userData as User
     } catch (error) {
-      console.error("Erro ao buscar usuário atual:", error)
       return null
     }
   },
@@ -178,8 +172,7 @@ export const authService = {
 
 export function canModifyUser(currentUserLevel: number, currentUserIsOwner: boolean, targetUserLevel: number): boolean {
   if (currentUserIsOwner) return true
-  if (targetUserLevel >= currentUserLevel) return false
-  return true
+  return currentUserLevel > targetUserLevel
 }
 
 export function getAccessLevelName(level: number): string {
