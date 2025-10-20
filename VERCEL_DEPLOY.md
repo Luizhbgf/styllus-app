@@ -46,12 +46,12 @@ scripts/09-production-setup.sql
 Na tela de configuração, adicione:
 
 \`\`\`env
-PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-PROD_SUPABASE_SUPABASE_ANON_KEY=sua-chave-anon
-PROD_SUPABASE_APP_URL=https://seu-dominio.vercel.app
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+NEXT_PUBLIC_APP_URL=https://seu-dominio.vercel.app
 \`\`\`
 
-**Importante:** Após o primeiro deploy, volte e atualize `PROD_SUPABASE_APP_URL` com a URL real do Vercel.
+**Importante:** Após o primeiro deploy, volte e atualize `NEXT_PUBLIC_APP_URL` com a URL real do Vercel.
 
 ### 2.3 Deploy
 1. Clique em "Deploy"

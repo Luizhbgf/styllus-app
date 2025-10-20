@@ -7,14 +7,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROD_SUPABASE_ENV: development
+        NEXT_PUBLIC_ENV: development
     container_name: styllus-dev
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=${PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL}
-      - PROD_SUPABASE_SUPABASE_ANON_KEY=${PROD_SUPABASE_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:
       - .:/app
@@ -30,14 +30,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROD_SUPABASE_ENV: staging
+        NEXT_PUBLIC_ENV: staging
     container_name: styllus-staging
     ports:
       - "3001:3000"
     environment:
       - NODE_ENV=production
-      - PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=${STAGING_SUPABASE_URL}
-      - PROD_SUPABASE_SUPABASE_ANON_KEY=${STAGING_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SUPABASE_URL=${STAGING_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${STAGING_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${STAGING_SUPABASE_SERVICE_ROLE_KEY}
     networks:
       - styllus-network
@@ -49,14 +49,14 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROD_SUPABASE_ENV: production
+        NEXT_PUBLIC_ENV: production
     container_name: styllus-prod
     ports:
       - "3002:3000"
     environment:
       - NODE_ENV=production
-      - PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=${PROD_SUPABASE_URL}
-      - PROD_SUPABASE_SUPABASE_ANON_KEY=${PROD_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SUPABASE_URL=${PROD_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${PROD_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${PROD_SUPABASE_SERVICE_ROLE_KEY}
     networks:
       - styllus-network

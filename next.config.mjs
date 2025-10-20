@@ -64,7 +64,7 @@ const nextConfig = {
   },
   
   env: {
-    PROD_SUPABASE_APP_URL: process.env.PROD_SUPABASE_APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 }
 

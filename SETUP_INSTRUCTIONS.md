@@ -53,14 +53,14 @@ Execute os scripts na seguinte ordem no SQL Editor do Supabase:
 1. Vá em Settings > Environment Variables
 2. Adicione:
    \`\`\`
-   PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
-   PROD_SUPABASE_SUPABASE_ANON_KEY=sua-anon-key
+   NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
    \`\`\`
 
 ### Localmente (.env.local):
 \`\`\`env
-PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
-PROD_SUPABASE_SUPABASE_ANON_KEY=sua-anon-key
+NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
 \`\`\`
 
 ## 3. Testar a Aplicação
