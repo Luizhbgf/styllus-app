@@ -6,6 +6,13 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface RegisterData {
+  email: string
+  password: string
+  name: string
+  phone: string
+}
+
 export interface AuthUser {
   id: string
   email: string
@@ -17,21 +24,26 @@ export interface AuthUser {
 
 export async function login(credentials: LoginCredentials): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    // Buscar usuário pelo email
-    const { data: user, error: userError } = await supabase
+    const { data: users, error: userError } = await supabase
       .from("users")
       .select("*")
       .eq("email", credentials.email)
       .eq("is_active", true)
-      .single()
 
-    if (userError || !user) {
+    if (userError) {
+      console.error("Error fetching user:", userError)
+      return { user: null, error: "Erro ao buscar usuário" }
+    }
+
+    if (!users || users.length === 0) {
       return { user: null, error: "Email ou senha incorretos" }
     }
 
-    // Verificar senha (temporariamente aceitar qualquer senha para desenvolvimento)
-    // Em produção, usar: const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash)
-    const isValidPassword = true
+    const user = users[0]
+
+    // Por enquanto, aceitar qualquer senha para desenvolvimento
+    // TODO: Implementar verificação de senha com bcrypt
+    const isValidPassword = credentials.password === "123456" || credentials.password.length > 0
 
     if (!isValidPassword) {
       return { user: null, error: "Email ou senha incorretos" }
@@ -57,25 +69,78 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
   }
 }
 
+export async function register(data: RegisterData): Promise<{ user: AuthUser | null; error: string | null }> {
+  try {
+    // Verificar se email já existe
+    const { data: existingUsers, error: checkError } = await supabase.from("users").select("id").eq("email", data.email)
+
+    if (checkError) {
+      console.error("Error checking existing user:", checkError)
+      return { user: null, error: "Erro ao verificar email" }
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
+      return { user: null, error: "Este email já está cadastrado" }
+    }
+
+    // Criar novo usuário
+    const { data: newUser, error: insertError } = await supabase
+      .from("users")
+      .insert({
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        user_type: "client",
+        access_level: 10,
+        is_owner: false,
+        is_active: true,
+      })
+      .select()
+      .single()
+
+    if (insertError || !newUser) {
+      console.error("Error creating user:", insertError)
+      return { user: null, error: "Erro ao criar conta. Tente novamente." }
+    }
+
+    // Criar registro de cliente
+    const { error: clientError } = await supabase.from("clients").insert({
+      user_id: newUser.id,
+      status: "active",
+    })
+
+    if (clientError) {
+      console.error("Error creating client record:", clientError)
+    }
+
+    return {
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        accessLevel: newUser.access_level,
+        isOwner: newUser.is_owner,
+        userType: newUser.user_type,
+      },
+      error: null,
+    }
+  } catch (error) {
+    console.error("Register error:", error)
+    return { user: null, error: "Erro ao criar conta. Tente novamente." }
+  }
+}
+
 export function getRedirectPath(accessLevel: number): string {
-  if (accessLevel >= 30) return "/admin"
+  if (accessLevel >= 30) return "/admin/dashboard"
   if (accessLevel >= 20) return "/staff/dashboard"
   return "/cliente/dashboard"
 }
 
 export function canModifyUser(currentUserLevel: number, currentUserIsOwner: boolean, targetUserLevel: number): boolean {
-  // Owner pode modificar qualquer um
   if (currentUserIsOwner) return true
-
-  // Usuários não podem modificar quem tem nível igual ou superior
   if (targetUserLevel >= currentUserLevel) return false
-
-  // Admin (30) pode modificar Staff (20) e Client (10)
   if (currentUserLevel >= 30 && targetUserLevel < 30) return true
-
-  // Staff (20) pode modificar Client (10)
   if (currentUserLevel >= 20 && targetUserLevel < 20) return true
-
   return false
 }
 

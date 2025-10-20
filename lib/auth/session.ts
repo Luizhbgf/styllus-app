@@ -2,7 +2,7 @@
 
 import type { AuthUser } from "./auth-service"
 
-const SESSION_KEY = "styllus_user"
+const SESSION_KEY = "styllus_session"
 
 export function setSession(user: AuthUser): void {
   if (typeof window !== "undefined") {
@@ -29,6 +29,6 @@ export function isAuthenticated(): boolean {
 }
 
 export function hasAccessLevel(requiredLevel: number): boolean {
-  const user = getSession()
-  return user ? user.accessLevel >= requiredLevel : false
+  const session = getSession()
+  return session ? session.accessLevel >= requiredLevel : false
 }
