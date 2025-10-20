@@ -1,76 +1,86 @@
--- Criar função para criar usuário automaticamente após signup no Auth
+-- Remover função e trigger existentes se houver
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+
+-- Criar função para lidar com novos usuários
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  user_name TEXT;
+  user_phone TEXT;
 BEGIN
-  INSERT INTO public.users (id, email, name, phone, user_type, access_level, is_owner, is_active, created_at)
+  -- Extrair nome e telefone dos metadados
+  user_name := COALESCE(NEW.raw_user_meta_data->>'name', 'Novo Usuário');
+  user_phone := COALESCE(NEW.raw_user_meta_data->>'phone', '');
+
+  -- Inserir na tabela users
+  INSERT INTO public.users (
+    id, 
+    email, 
+    name, 
+    phone, 
+    user_type, 
+    access_level, 
+    is_owner, 
+    is_active, 
+    created_at
+  )
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', 'Novo Usuário'),
-    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    user_name,
+    user_phone,
     'client',
     10,
     false,
     true,
     NOW()
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    phone = EXCLUDED.phone,
+    updated_at = NOW();
 
-  -- Criar cliente
-  INSERT INTO public.clients (user_id, status, created_at)
-  VALUES (NEW.id, 'active', NOW())
+  -- Inserir na tabela clients
+  INSERT INTO public.clients (
+    user_id, 
+    status, 
+    created_at
+  )
+  VALUES (
+    NEW.id,
+    'active',
+    NOW()
+  )
   ON CONFLICT (user_id) DO NOTHING;
 
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log do erro (aparecerá nos logs do Supabase)
+    RAISE WARNING 'Error in handle_new_user: %', SQLERRM;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Remover trigger existente se houver
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
--- Criar trigger para executar a função
+-- Criar trigger
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- Atualizar políticas RLS para tabela users
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- Garantir que a tabela clients tem a constraint necessária
+ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_user_id_fkey;
+ALTER TABLE clients ADD CONSTRAINT clients_user_id_fkey 
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-DROP POLICY IF EXISTS "Users can read their own data" ON users;
-DROP POLICY IF EXISTS "Users can update their own data" ON users;
-DROP POLICY IF EXISTS "Service role can do anything" ON users;
+-- Criar constraint única se não existir
+ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_user_id_key;
+ALTER TABLE clients ADD CONSTRAINT clients_user_id_key UNIQUE (user_id);
 
-CREATE POLICY "Users can read their own data"
-  ON users FOR SELECT
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can update their own data"
-  ON users FOR UPDATE
-  USING (auth.uid() = id);
-
-CREATE POLICY "Service role can do anything"
-  ON users
-  USING (auth.role() = 'service_role');
-
--- Políticas para clients
-ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Clients can read their own data" ON clients;
-DROP POLICY IF EXISTS "Service role can do anything on clients" ON clients;
-
-CREATE POLICY "Clients can read their own data"
-  ON clients FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Service role can do anything on clients"
-  ON clients
-  USING (auth.role() = 'service_role');
-
--- Adicionar índices para melhor performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type);
-CREATE INDEX IF NOT EXISTS idx_clients_user_id ON clients(user_id);
-
--- Comentário
-COMMENT ON FUNCTION handle_new_user() IS 'Cria automaticamente registro de usuário e cliente após signup no Auth';
+COMMENT ON FUNCTION handle_new_user() IS 'Trigger function para criar usuário e cliente automaticamente após signup';
