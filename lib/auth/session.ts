@@ -1,8 +1,6 @@
-"use client"
-
 import type { AuthUser } from "./auth-service"
 
-const SESSION_KEY = "styllus_session"
+const SESSION_KEY = "styllus_user_session"
 
 export function setSession(user: AuthUser): void {
   if (typeof window !== "undefined") {
@@ -11,11 +9,14 @@ export function setSession(user: AuthUser): void {
 }
 
 export function getSession(): AuthUser | null {
-  if (typeof window !== "undefined") {
+  if (typeof window === "undefined") return null
+
+  try {
     const session = localStorage.getItem(SESSION_KEY)
     return session ? JSON.parse(session) : null
+  } catch {
+    return null
   }
-  return null
 }
 
 export function clearSession(): void {
@@ -28,7 +29,7 @@ export function isAuthenticated(): boolean {
   return getSession() !== null
 }
 
-export function hasAccessLevel(requiredLevel: number): boolean {
-  const session = getSession()
-  return session ? session.accessLevel >= requiredLevel : false
+export function hasMinimumAccessLevel(requiredLevel: number): boolean {
+  const user = getSession()
+  return user ? user.accessLevel >= requiredLevel : false
 }

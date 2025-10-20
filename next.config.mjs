@@ -1,19 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: process.env.BUILD_MODE === 'mobile' ? 'export' : 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-  trailingSlash: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   
-  // PWA Configuration
   images: {
-    domains: ['localhost', 'styllusestetica.com.br'],
+    domains: ['styllusestetica.com.br', 'supabase.co'],
     formats: ['image/avif', 'image/webp'],
-    unoptimized: process.env.BUILD_MODE === 'mobile',
+    unoptimized: true,
   },
 
-  // Security headers
   async headers() {
     return [
       {
@@ -48,7 +50,6 @@ const nextConfig = {
     ]
   },
 
-  // Webpack optimizations
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -59,14 +60,6 @@ const nextConfig = {
       };
     }
     return config;
-  },
-
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  typescript: {
-    ignoreBuildErrors: true,
   },
 }
 
