@@ -23,15 +23,16 @@ export interface AuthUser {
 
 export async function login(credentials: LoginCredentials): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    console.log("🔐 Tentando login:", credentials.email)
+    console.log("🔐 Iniciando login:", credentials.email)
 
+    // 1. Autenticar com Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
     })
 
     if (authError) {
-      console.error("❌ Erro de autenticação:", authError.message)
+      console.error("❌ Erro auth:", authError)
       return {
         user: null,
         error: authError.message.includes("Invalid") ? "Email ou senha incorretos" : authError.message,
@@ -42,6 +43,9 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
       return { user: null, error: "Erro ao fazer login" }
     }
 
+    console.log("✅ Auth OK:", authData.user.email)
+
+    // 2. Buscar dados do usuário
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*")
@@ -49,7 +53,8 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
       .single()
 
     if (userError) {
-      console.warn("⚠️ Usando dados do Auth:", userError.message)
+      console.warn("⚠️ Erro ao buscar user:", userError)
+      // Retornar dados básicos do auth
       return {
         user: {
           id: authData.user.id,
@@ -63,7 +68,7 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
       }
     }
 
-    console.log("✅ Login bem-sucedido:", userData.name)
+    console.log("✅ Login completo:", userData.name)
 
     return {
       user: {
@@ -76,16 +81,17 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
       },
       error: null,
     }
-  } catch (error) {
-    console.error("❌ Erro no login:", error)
-    return { user: null, error: "Erro de conexão. Verifique sua internet." }
+  } catch (error: any) {
+    console.error("❌ Exceção login:", error)
+    return { user: null, error: error.message || "Erro ao fazer login" }
   }
 }
 
 export async function register(data: RegisterData): Promise<{ user: AuthUser | null; error: string | null }> {
   try {
-    console.log("📝 Registrando:", data.email)
+    console.log("📝 Iniciando registro:", data.email)
 
+    // 1. Criar conta no Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -98,7 +104,7 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
     })
 
     if (authError) {
-      console.error("❌ Erro no registro:", authError.message)
+      console.error("❌ Erro registro:", authError)
       return {
         user: null,
         error: authError.message.includes("already") ? "Este email já está cadastrado" : authError.message,
@@ -109,16 +115,16 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
       return { user: null, error: "Erro ao criar conta" }
     }
 
+    console.log("✅ Conta criada:", authData.user.email)
+
+    // Aguardar trigger criar tabela users
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", authData.user.id)
-      .single()
+    // 2. Verificar se foi criado
+    const { data: userData } = await supabase.from("users").select("*").eq("id", authData.user.id).single()
 
-    if (userError) {
-      console.warn("⚠️ Usando dados do Auth")
+    if (!userData) {
+      console.warn("⚠️ Usando dados do auth")
       return {
         user: {
           id: authData.user.id,
@@ -145,9 +151,9 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser | n
       },
       error: null,
     }
-  } catch (error) {
-    console.error("❌ Erro no registro:", error)
-    return { user: null, error: "Erro de conexão. Verifique sua internet." }
+  } catch (error: any) {
+    console.error("❌ Exceção registro:", error)
+    return { user: null, error: error.message || "Erro ao criar conta" }
   }
 }
 
@@ -156,7 +162,6 @@ export async function logout(): Promise<{ error: string | null }> {
     const { error } = await supabase.auth.signOut()
     return { error: error ? "Erro ao fazer logout" : null }
   } catch (error) {
-    console.error("Erro no logout:", error)
     return { error: "Erro ao fazer logout" }
   }
 }
@@ -190,7 +195,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       userType: userData.user_type || "client",
     }
   } catch (error) {
-    console.error("Erro ao obter usuário:", error)
     return null
   }
 }
@@ -203,7 +207,6 @@ export function getRedirectPath(accessLevel: number): string {
 
 export function canModifyUser(currentUserLevel: number, currentUserIsOwner: boolean, targetUserLevel: number): boolean {
   if (currentUserIsOwner) return true
-  if (targetUserLevel >= currentUserLevel) return false
   return currentUserLevel > targetUserLevel
 }
 

@@ -1,33 +1,32 @@
 import { createClient } from "@supabase/supabase-js"
-import type { Database } from "./types"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "⚠️ Variáveis de ambiente do Supabase não configuradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no Vercel.",
-  )
+if (!supabaseUrl) {
+  throw new Error("❌ NEXT_PUBLIC_SUPABASE_URL não está definida! Configure no Vercel.")
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+if (!supabaseAnonKey) {
+  throw new Error("❌ NEXT_PUBLIC_SUPABASE_ANON_KEY não está definida! Configure no Vercel.")
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: "pkce",
   },
   global: {
     headers: {
-      "x-application-name": "styllus-production",
+      "x-application-name": "styllus-app",
     },
   },
 })
 
-export async function healthCheck() {
-  try {
-    const { error } = await supabase.from("users").select("count").limit(1)
-    return !error
-  } catch {
-    return false
-  }
-}
+// Log para debug em produção
+console.log("🔧 Supabase Client iniciado:", {
+  url: supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+})

@@ -9,27 +9,22 @@ export function setSession(user: AuthUser): void {
 }
 
 export function getSession(): AuthUser | null {
-  if (typeof window === "undefined") return null
-
-  try {
+  if (typeof window !== "undefined") {
     const session = localStorage.getItem(SESSION_KEY)
-    return session ? JSON.parse(session) : null
-  } catch {
-    return null
+    if (session) {
+      try {
+        return JSON.parse(session)
+      } catch (e) {
+        console.error("Erro ao parsear sessão:", e)
+        return null
+      }
+    }
   }
+  return null
 }
 
 export function clearSession(): void {
   if (typeof window !== "undefined") {
     localStorage.removeItem(SESSION_KEY)
   }
-}
-
-export function isAuthenticated(): boolean {
-  return getSession() !== null
-}
-
-export function hasMinimumAccessLevel(requiredLevel: number): boolean {
-  const user = getSession()
-  return user ? user.accessLevel >= requiredLevel : false
 }
