@@ -35,8 +35,8 @@ Na dashboard da Vercel:
 2. Adicione todas as variáveis:
 
 \`\`\`env
-NEXT_PUBLIC_ENV=production
-NEXT_PUBLIC_APP_URL=https://styllusestetica.com.br
+PROD_SUPABASE_ENV=production
+PROD_SUPABASE_APP_URL=https://styllusestetica.com.br
 
 STAGING_SUPABASE_URL=sua_url_supabase
 STAGING_SUPABASE_ANON_KEY=sua_anon_key

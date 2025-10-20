@@ -4,8 +4,8 @@ echo "🚀 Iniciando build para mobile..."
 
 # Definir modo mobile
 export BUILD_MODE=mobile
-export NEXT_PUBLIC_ENV=production
-export NEXT_PUBLIC_APP_URL=https://styllusestetica.com.br
+export PROD_SUPABASE_ENV=production
+export PROD_SUPABASE_APP_URL=https://styllusestetica.com.br
 
 # Build do Next.js
 echo "📦 Building Next.js..."

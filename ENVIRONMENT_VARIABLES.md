@@ -4,21 +4,21 @@ Este documento explica todas as variáveis de ambiente necessárias para o funci
 
 ## 🔑 Variáveis Obrigatórias
 
-### 1. NEXT_PUBLIC_ENV
+### 1. PROD_SUPABASE_ENV
 **Descrição:** Define o ambiente da aplicação
 **Valores possíveis:** `development`, `staging`, `production`
 **Exemplo:** `production`
 
 \`\`\`env
-NEXT_PUBLIC_ENV=production
+PROD_SUPABASE_ENV=production
 \`\`\`
 
-### 2. NEXT_PUBLIC_APP_URL
+### 2. PROD_SUPABASE_APP_URL
 **Descrição:** URL pública da aplicação
 **Exemplo:** `https://styllus.app` ou `https://seu-dominio.vercel.app`
 
 \`\`\`env
-NEXT_PUBLIC_APP_URL=https://styllus.app
+PROD_SUPABASE_APP_URL=https://styllus.app
 \`\`\`
 
 ### 3. SUPABASE_URL (Staging)
@@ -88,14 +88,14 @@ PROD_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 4. Selecione os ambientes apropriados:
    - `STAGING_*` → Preview
    - `PROD_*` → Production
-   - `NEXT_PUBLIC_*` → Todos
+   - `PROD_SUPABASE_*` → Todos
 
 ### Passo 3: Valores Recomendados
 
 \`\`\`env
 # Geral
-NEXT_PUBLIC_ENV=production
-NEXT_PUBLIC_APP_URL=https://seu-app.vercel.app
+PROD_SUPABASE_ENV=production
+PROD_SUPABASE_APP_URL=https://seu-app.vercel.app
 
 # Staging (use as mesmas do prod se não tiver ambiente separado)
 STAGING_SUPABASE_URL=sua_url_supabase
@@ -110,9 +110,9 @@ PROD_SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
 
 ## 🔒 Segurança
 
-### ✅ Pode expor (NEXT_PUBLIC_*)
-- `NEXT_PUBLIC_ENV`
-- `NEXT_PUBLIC_APP_URL`
+### ✅ Pode expor (PROD_SUPABASE_*)
+- `PROD_SUPABASE_ENV`
+- `PROD_SUPABASE_APP_URL`
 - Qualquer `SUPABASE_URL`
 - Qualquer `SUPABASE_ANON_KEY`
 
@@ -125,8 +125,8 @@ PROD_SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
 
 \`\`\`env
 # .env.local (desenvolvimento)
-NEXT_PUBLIC_ENV=development
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+PROD_SUPABASE_ENV=development
+PROD_SUPABASE_APP_URL=http://localhost:3000
 
 STAGING_SUPABASE_URL=https://abc123.supabase.co
 STAGING_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc123

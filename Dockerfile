@@ -14,8 +14,8 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 # Build da aplicação
-ARG NEXT_PUBLIC_ENV=production
-ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
+ARG PROD_SUPABASE_ENV=production
+ENV PROD_SUPABASE_ENV=$PROD_SUPABASE_ENV
 
 RUN npm run build
 

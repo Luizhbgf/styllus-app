@@ -1,11 +1,11 @@
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.PROD_SUPABASE_SUPABASE_URL
+const supabaseAnonKey = process.env.PROD_SUPABASE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "Por favor configure as variáveis de ambiente:\n" + "NEXT_PUBLIC_SUPABASE_URL\n" + "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "Por favor configure as variáveis de ambiente:\n" + "PROD_SUPABASE_SUPABASE_URL\n" + "PROD_SUPABASE_SUPABASE_ANON_KEY",
   )
 }
 
