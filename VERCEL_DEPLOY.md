@@ -46,7 +46,7 @@ scripts/09-production-setup.sql
 Na tela de configuração, adicione:
 
 \`\`\`env
-PROD_SUPABASE_SUPABASE_URL=https://seu-projeto.supabase.co
+PROD_SUPABASE_NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 PROD_SUPABASE_SUPABASE_ANON_KEY=sua-chave-anon
 PROD_SUPABASE_APP_URL=https://seu-dominio.vercel.app
 \`\`\`
