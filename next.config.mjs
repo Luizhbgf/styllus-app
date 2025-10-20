@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true,
   poweredByHeader: false,
   compress: true,
   eslint: {
@@ -11,9 +12,9 @@ const nextConfig = {
   },
   
   images: {
-    domains: ['styllusestetica.com.br', 'supabase.co'],
+    domains: ['styllusestetica.com.br', 'supabase.co', 'blob.vercel-storage.com'],
     formats: ['image/avif', 'image/webp'],
-    unoptimized: true,
+    unoptimized: false,
   },
 
   async headers() {
@@ -60,6 +61,10 @@ const nextConfig = {
       };
     }
     return config;
+  },
+  
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
 }
 

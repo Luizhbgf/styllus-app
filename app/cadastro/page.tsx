@@ -1,48 +1,44 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { register } from "@/lib/auth/auth-service"
-import { setSession } from "@/lib/auth/session"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2, UserPlus, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { authService } from "@/lib/auth/auth-service"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, Loader2 } from "lucide-react"
 
 export default function CadastroPage() {
   const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
-    terms: false,
   })
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setError("")
 
+    // Validações
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem")
-      return
-    }
-
-    if (!formData.terms) {
-      setError("Você precisa aceitar os termos de serviço")
       return
     }
 
@@ -51,202 +47,151 @@ export default function CadastroPage() {
       return
     }
 
-    setIsLoading(true)
+    setLoading(true)
 
     try {
-      console.log("Attempting registration for:", formData.email)
-
-      const { user, error: registerError } = await register({
+      console.log("Tentando cadastrar usuário...")
+      const { user, error: registerError } = await authService.register({
+        name: formData.name,
         email: formData.email,
-        password: formData.password,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
         phone: formData.phone,
+        password: formData.password,
       })
 
-      if (registerError || !user) {
-        console.error("Registration failed:", registerError)
-        setError(registerError || "Não foi possível criar sua conta")
-        setIsLoading(false)
+      if (registerError) {
+        console.error("Erro no cadastro:", registerError)
+        setError(registerError)
+        setLoading(false)
         return
       }
 
-      console.log("Registration successful:", user)
-      setSession(user)
+      if (!user) {
+        setError("Falha ao criar conta")
+        setLoading(false)
+        return
+      }
 
-      toast({
-        title: "Conta criada com sucesso!",
-        description: `Bem-vindo, ${user.name}!`,
-      })
+      console.log("Cadastro bem-sucedido! Usuário:", user)
 
-      setTimeout(() => {
-        router.push("/cliente/dashboard")
-        router.refresh()
-      }, 500)
-    } catch (error) {
-      console.error("Registration exception:", error)
-      setError("Ocorreu um erro inesperado. Tente novamente.")
-      setIsLoading(false)
+      // Redirecionar para dashboard do cliente
+      router.push("/cliente/dashboard")
+    } catch (err: any) {
+      console.error("Erro inesperado no cadastro:", err)
+      setError(err.message || "Erro ao criar conta")
+      setLoading(false)
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }))
-    setError(null)
-  }
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <UserPlus className="h-6 w-6 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Criar conta</CardTitle>
+          <CardDescription className="text-center">Preencha os dados abaixo para criar sua conta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome completo</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Seu nome"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                autoComplete="name"
+                disabled={loading}
+              />
             </div>
-            <CardTitle className="text-2xl font-bold">Criar uma conta</CardTitle>
-            <CardDescription>Preencha os campos abaixo para criar sua conta gratuitamente</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone (opcional)</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="(11) 99999-9999"
+                value={formData.phone}
+                onChange={handleChange}
+                autoComplete="tel"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                disabled={loading}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando conta...
+                </>
+              ) : (
+                "Criar conta"
               )}
+            </Button>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Nome</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="João"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoading}
-                    autoComplete="given-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Sobrenome</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Silva"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoading}
-                    autoComplete="family-name"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  autoComplete="tel"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Digite a senha novamente"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={formData.terms}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, terms: checked as boolean }))}
-                  disabled={isLoading}
-                />
-                <Label htmlFor="terms" className="text-sm cursor-pointer">
-                  Eu concordo com os{" "}
-                  <Link href="/termos" className="text-primary hover:underline">
-                    termos de serviço
-                  </Link>{" "}
-                  e{" "}
-                  <Link href="/privacidade" className="text-primary hover:underline">
-                    política de privacidade
-                  </Link>
-                </Label>
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading} size="lg">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando conta...
-                  </>
-                ) : (
-                  "Criar Conta"
-                )}
-              </Button>
-
-              <div className="text-center text-sm">
-                Já tem uma conta?{" "}
-                <Link href="/login" className="text-primary hover:underline font-medium">
-                  Entrar
-                </Link>
-              </div>
-            </CardFooter>
+            <div className="text-center text-sm">
+              Já tem uma conta?{" "}
+              <Link href="/login" className="text-primary hover:underline font-medium">
+                Faça login
+              </Link>
+            </div>
           </form>
-        </Card>
-      </main>
-      <SiteFooter />
+        </CardContent>
+      </Card>
     </div>
   )
 }

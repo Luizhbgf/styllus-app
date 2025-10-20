@@ -3,12 +3,10 @@ import { createClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl) {
-  throw new Error("❌ NEXT_PUBLIC_SUPABASE_URL não está definida! Configure no Vercel.")
-}
-
-if (!supabaseAnonKey) {
-  throw new Error("❌ NEXT_PUBLIC_SUPABASE_ANON_KEY não está definida! Configure no Vercel.")
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "Por favor configure as variáveis de ambiente:\n" + "NEXT_PUBLIC_SUPABASE_URL\n" + "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  )
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -16,17 +14,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: "pkce",
-  },
-  global: {
-    headers: {
-      "x-application-name": "styllus-app",
-    },
+    storageKey: "styllus-auth",
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
   },
 })
 
-// Log para debug em produção
-console.log("🔧 Supabase Client iniciado:", {
-  url: supabaseUrl,
-  hasKey: !!supabaseAnonKey,
-})
+// Log para debug (remover em produção)
+console.log("Supabase URL:", supabaseUrl)
+console.log("Supabase Client inicializado")
